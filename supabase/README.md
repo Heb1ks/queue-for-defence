@@ -121,6 +121,6 @@ $env:PGLITE_MODULE = 'C:\path\to\pglite\dist\index.js'
 node supabase\tests\integration.mjs
 ```
 
-Проверено: **53 assertions в PostgreSQL/PGlite**, включая повторное применение миграции. Supabase Auth в тестах заменён схемой с тем же `auth.uid()`. Расширение `pg_cron`, реальная доставка Realtime и нагрузка с нескольких настоящих соединений требуют проверки в подключённом Supabase-проекте. Корректность конкурирующих записей обеспечивают блокировки строк, транзакции, уникальность `(queue_id, student_id)` и проверка `expected_revision`; отдельный нагрузочный тест ещё не проводился.
+Проверено: **58 assertions в PostgreSQL/PGlite**, включая повторное применение миграции и порядок блокировок. Supabase Auth в тестах заменён схемой с тем же `auth.uid()`. Расширение `pg_cron`, реальная доставка Realtime и нагрузка с нескольких настоящих соединений проверяются отдельно в подключённом Supabase-проекте. Корректность конкурирующих записей обеспечивают общая транзакционная блокировка группы, блокировки строк, уникальность `(queue_id, student_id)` и проверка `expected_revision`; отдельный многосессионный нагрузочный тест ещё не проводился.
 
 Официальные источники: [Anonymous Auth](https://supabase.com/docs/guides/auth/auth-anonymous), [database functions](https://supabase.com/docs/guides/database/functions), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Cron](https://supabase.com/docs/guides/cron).
