@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#193d31" />
+    <meta name="description" content="Очереди на защиту для группы SE-2421. Ваше место, ближайшие занятия и понятный порядок защиты." />
+    <meta name="color-scheme" content="light" />
+    <title>Порядок — очереди на защиту</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23193d31'/%3E%3Cpath d='M11 12h18M11 20h12M11 28h6' stroke='%23c9f1a4' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.8"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.8"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.8"/><rect x="14" y="14" width="6.5" height="6.5" rx="1.8"/></symbol>
+      <symbol id="icon-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7.5 3v4M16.5 3v4M4 10h16M8 14h1M15 14h1M8 17h1"/></symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2.5"/><circle cx="16" cy="12" r="2.5"/><circle cx="10" cy="18" r="2.5"/></symbol>
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M9 12h11"/></symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v6c0 4.3 7.5 9 7.5 9s7.5-4.7 7.5-9V6L12 3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/></symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5.5a3 3 0 0 1 0 5.5M21 20v-2a6 6 0 0 0-3.5-5.5"/></symbol>
+    </svg>
+
+    <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
+      <div class="auth-main">
+        <a class="brand auth-brand" href="./" aria-label="Порядок — главная">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>Порядок</strong><small>Очереди на защиту</small></span>
+        </a>
+
+        <div class="auth-form-wrap">
+          <div class="eyebrow"><span class="tiny-dot"></span> КАБИНЕТ СТУДЕНТА</div>
+          <h1 id="auth-title">Всё идёт<br />по порядку.</h1>
+          <p class="auth-description">Войдите, чтобы занять место в очереди<br class="desktop-break" /> и спокойно готовиться к защите.</p>
+
+          <form id="login-form" class="auth-form">
+            <div class="form-grid">
+              <label class="field">
+                <span class="field-label">Имя</span>
+                <input class="input" name="first_name" autocomplete="given-name" placeholder="Ваше имя" maxlength="64" required />
+              </label>
+              <label class="field">
+                <span class="field-label">Фамилия</span>
+                <input class="input" name="last_name" autocomplete="family-name" placeholder="Ваша фамилия" maxlength="64" required />
+              </label>
+              <label class="field">
+                <span class="field-label">Группа</span>
+                <input class="input" name="group_code" autocomplete="off" placeholder="SE-2421" value="SE-2421" maxlength="24" spellcheck="false" required />
+              </label>
+              <label class="field">
+                <span class="field-label">Код студента</span>
+                <input class="input" name="student_code" autocomplete="off" inputmode="numeric" placeholder="Индивидуальный код" maxlength="24" spellcheck="false" required />
+              </label>
+            </div>
+            <p class="field-hint">Используйте свои данные из списка группы.</p>
+            <div id="auth-status" class="auth-status" role="status" aria-live="polite"></div>
+            <button id="auth-submit" class="button button-primary auth-submit" type="submit">Войти в кабинет <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg></button>
+          </form>
+
+          <p id="auth-demo-note" class="auth-demo-note" hidden>Сейчас доступен предпросмотр с данными примера. Реальные данные студентов вводить не нужно.</p>
+          <button id="demo-login" class="button button-ghost demo-login" type="button">Посмотреть демо <span aria-hidden="true">↗</span></button>
+          <p class="auth-privacy"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg> Данные группы доступны её участникам.</p>
+        </div>
+        <div class="auth-footer"><span>Меньше ожидания. Больше ясности.</span><span>SE-2421</span></div>
+      </div>
+
+      <aside class="auth-art" aria-label="Как выглядит очередь">
+        <div class="auth-art-top"><span class="art-label">ОДНА ГРУППА. ОБЩИЙ ПОРЯДОК.</span><span class="art-orbit" aria-hidden="true">✳</span></div>
+        <div class="art-heading">Своё место<br />всегда видно.</div>
+        <p class="art-description">Никаких «кто последний?»<br />Вы знаете, кто сейчас и когда ваша очередь.</p>
+        <div class="queue-preview">
+          <div class="preview-top"><span class="preview-subject">Computer Networks</span><span class="preview-example">ПРИМЕР</span></div>
+          <div class="preview-title">Очередь на защиту <span>↗</span></div>
+          <div class="preview-person preview-current"><span class="preview-number">01</span><div><strong>Сейчас защищается</strong><small>Участник группы</small></div><span class="preview-live"><i></i> Сейчас</span></div>
+          <div class="preview-person"><span class="preview-number">02</span><div><strong>Готовится следующий</strong><small>Всё готово к вашей защите</small></div><span class="preview-check"><svg class="icon" aria-hidden="true"><use href="#icon-check"/></svg></span></div>
+          <div class="preview-person"><span class="preview-number">03</span><div><strong>Ваше место в очереди</strong><small>Можно ещё раз всё проверить</small></div><span class="preview-you">Вы</span></div>
+          <div class="preview-bottom"><svg class="icon" aria-hidden="true"><use href="#icon-clock"/></svg><span>Очередь обновляется вместе с группой</span></div>
+        </div>
+        <div class="art-bottom"><span class="art-bottom-line"></span><span>Запишитесь. Подготовьтесь. Защититесь.</span></div>
+      </aside>
+    </section>
+
+    <div id="app-shell" class="app-shell" hidden>
+      <aside class="sidebar">
+        <a class="brand sidebar-brand" href="#/mine" aria-label="Порядок — мои очереди">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>Порядок</strong><small>Очереди на защиту</small></span>
+        </a>
+        <div class="sidebar-group"><span class="sidebar-group-icon"><svg class="icon" aria-hidden="true"><use href="#icon-users"/></svg></span><div><small>ВАША ГРУППА</small><strong>SE-2421</strong></div><span class="sidebar-group-dot"></span></div>
+        <div class="nav-label">ЛИЧНЫЙ КАБИНЕТ</div>
+        <nav class="sidebar-nav" aria-label="Главная навигация">
+          <button class="nav-item is-active" type="button" data-view="mine"><svg class="icon" aria-hidden="true"><use href="#icon-grid"/></svg><span>Мои очереди</span><span class="nav-arrow" aria-hidden="true">↗</span></button>
+          <button class="nav-item" type="button" data-view="queues"><svg class="icon" aria-hidden="true"><use href="#icon-list"/></svg><span>Все очереди</span></button>
+          <button class="nav-item" type="button" data-view="schedule"><svg class="icon" aria-hidden="true"><use href="#icon-calendar"/></svg><span>Расписание</span></button>
+          <button class="nav-item" type="button" data-view="admin" data-admin-only hidden><svg class="icon" aria-hidden="true"><use href="#icon-settings"/></svg><span>Управление</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-note"><span class="sidebar-note-symbol" aria-hidden="true">✳</span><strong>Спокойно, вы успеете.</strong><p>Запишитесь в очередь<br />и следите за своим местом.</p></div>
+          <div class="sidebar-footer"><span>Сделано для нашей группы</span><span aria-hidden="true">↗</span></div>
+        </div>
+      </aside>
+
+      <div class="main-shell">
+        <header class="topbar">
+          <a class="mobile-brand" href="#/mine">Порядок<span> / SE-2421</span></a>
+          <div class="topbar-context"><svg class="icon" aria-hidden="true"><use href="#icon-grid"/></svg><span>Личный кабинет</span><span class="context-slash">/</span><span class="context-group">SE-2421</span></div>
+          <div class="topbar-right">
+            <span id="connection-status" class="connection-status">Подключение…</span>
+            <span class="topbar-divider" aria-hidden="true"></span>
+            <div class="user-profile"><span id="user-avatar" class="user-avatar" aria-hidden="true">С</span><span class="user-details"><strong id="user-name">Студент</strong><small id="user-role">Участник группы</small></span></div>
+            <button id="signout" class="icon-button signout" type="button" aria-label="Выйти из кабинета" title="Выйти"><svg class="icon" aria-hidden="true"><use href="#icon-logout"/></svg></button>
+          </div>
+        </header>
+
+        <div id="demo-banner" class="demo-banner" hidden><span class="demo-banner-dot" aria-hidden="true"></span><span>Демонстрация · данные примера, изменения сохраняются только в этом браузере</span></div>
+        <main id="main-content" class="page-content" tabindex="-1">
+          <div class="page-heading">
+            <div><p id="page-eyebrow" class="eyebrow">ВАША УЧЁБА БЕЗ СУЕТЫ</p><h1 id="page-title">Мои очереди</h1><p id="page-description" class="page-description">Ваше место и всё, что нужно знать перед защитой.</p></div>
+            <div id="page-actions" class="page-actions"></div>
+          </div>
+          <div id="app-content"><div class="loading-state" role="status"><span class="loading-spinner" aria-hidden="true"></span><span>Загружаем очереди…</span></div></div>
+          <footer class="page-footer"><span>Порядок <span class="footer-dot">·</span> SE-2421</span><span>Каждая защита — ещё один шаг вперёд.</span></footer>
+        </main>
+      </div>
+
+      <nav class="mobile-nav" aria-label="Мобильная навигация">
+        <button type="button" data-view="mine" class="is-active"><svg class="icon" aria-hidden="true"><use href="#icon-grid"/></svg><span>Мои</span></button>
+        <button type="button" data-view="queues"><svg class="icon" aria-hidden="true"><use href="#icon-list"/></svg><span>Все очереди</span></button>
+        <button type="button" data-view="schedule"><svg class="icon" aria-hidden="true"><use href="#icon-calendar"/></svg><span>Расписание</span></button>
+        <button type="button" data-view="admin" data-admin-only hidden><svg class="icon" aria-hidden="true"><use href="#icon-settings"/></svg><span>Управление</span></button>
+      </nav>
+    </div>
+
+    <dialog id="app-dialog" class="app-dialog" aria-label="Действие с очередью">
+      <button class="icon-button dialog-close" type="button" data-close-dialog aria-label="Закрыть окно"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
+      <div id="dialog-content"></div>
+    </dialog>
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
+    <noscript><div class="noscript-note">Для работы очередей включите JavaScript в настройках браузера.</div></noscript>
+  </body>
+</html>

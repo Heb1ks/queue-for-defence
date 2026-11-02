@@ -1,0 +1,13 @@
+{
+  "name": "queue-for-defence",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Очереди на защиту для SE-2421. GitHub Pages + Supabase.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
