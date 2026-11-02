@@ -128,7 +128,7 @@ function queueCard(queue) {
   return `<article class="queue-card${mine ? ' queue-card-mine' : ''}">
     <div class="queue-card-header"><span class="subject-icon">${icon(/network/i.test(queue.subject_name) ? 'users' : /cloud/i.test(queue.subject_name) ? 'grid' : 'list')}</span>${statusLabel(queue)}</div>
     <div><h2 class="queue-title">${h(queue.subject_name)}</h2><p class="queue-meta">${h(queue.title || 'Защита работы')}</p></div>
-    <div class="queue-meta">${icon('calendar')} ${h(formatDate(queue.starts_at, tz(), true))}<span aria-hidden="true"> · </span>${formatTime(queue.starts_at, tz())}</div>
+    <div class="queue-meta">${icon('calendar')} ${h(formatDate(queue.starts_at, tz(), true))}<span aria-hidden="true"> · </span>${formatTime(queue.starts_at, tz())}–${formatTime(queue.closes_at, tz())}</div>
     ${mine ? `<div class="position-badge"><span>${myTurn ? 'Сейчас ваша защита' : 'Ваше место в очереди'}</span><strong>${myTurn ? '↗' : String(queue.my_position).padStart(2, '0')}</strong></div>
       <div class="queue-progress" aria-hidden="true"><span style="width:${myTurn ? 100 : Math.max(8, Math.round(100 / Math.max(1, queue.my_position)))}%"></span></div>
       <p class="small muted">${myTurn ? 'Покажите работу преподавателю. Удачи!' : before ? `Перед вами ${ordinalPeople(before)}${current ? ' и текущая защита' : ''}. Можно готовиться.` : current ? 'Вы следующие — проверьте, всё ли готово.' : 'Вы первые. Администратор начнёт защиту.'}</p>` :
@@ -142,10 +142,15 @@ function empty(title, description, action = '') {
   return `<div class="empty-state"><span class="empty-icon">${icon('list')}</span><h2>${h(title)}</h2><p>${h(description)}</p>${action}</div>`;
 }
 function scheduleCards(schedules, compact = false) {
-  return schedules.map(schedule => `<article class="schedule-card"><span class="weekday-badge">${WEEKDAYS_SHORT[schedule.weekday - 1]}<small>${h(schedule.local_time)}</small></span>
-    <div class="schedule-info"><strong>${h(schedule.subject_name)}</strong><span>${WEEKDAYS[schedule.weekday - 1]} · запись за ${Number(schedule.opens_minutes_before)} мин.</span></div>
+  return schedules.map(schedule => {
+    const [hours, minutes] = schedule.local_time.split(':').map(Number);
+    const end = (hours * 60 + minutes + Number(schedule.duration_minutes)) % 1440;
+    const endTime = `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+    return `<article class="schedule-card"><span class="weekday-badge">${WEEKDAYS_SHORT[schedule.weekday - 1]}<small>${h(schedule.local_time)}</small></span>
+    <div class="schedule-info"><strong>${h(schedule.subject_name)}</strong><span>${WEEKDAYS[schedule.weekday - 1]} · ${h(schedule.local_time)}–${endTime} · запись за ${Number(schedule.opens_minutes_before)} мин.</span></div>
     ${!schedule.enabled ? '<span class="badge badge-muted">На паузе</span>' : '<span class="badge badge-green">Еженедельно</span>'}
-    ${isAdmin() && !compact ? `<div class="action-row">${button('Изменить', 'edit-schedule', schedule.id)}${button('Удалить', 'delete-schedule', schedule.id, { danger: true })}</div>` : ''}</article>`).join('');
+    ${isAdmin() && !compact ? `<div class="action-row">${button('Изменить', 'edit-schedule', schedule.id)}${button('Удалить', 'delete-schedule', schedule.id, { danger: true })}</div>` : ''}</article>`;
+  }).join('');
 }
 function renderMine() {
   const mine = myQueues(state);
@@ -208,7 +213,7 @@ function closeDialog() { dialog.close(); dialogState = null; confirmCallback = n
 function renderQueueDialog(queue) {
   const current = queue.entries.find(entry => entry.is_current);
   const mine = queue.my_entry_id;
-  $('#dialog-content').innerHTML = `<p class="eyebrow">${h(formatDate(queue.starts_at, tz(), true))} · ${formatTime(queue.starts_at, tz())}</p><h2 class="dialog-title">${h(queue.subject_name)}</h2><p class="dialog-description">${h(queue.title)}</p>
+  $('#dialog-content').innerHTML = `<p class="eyebrow">${h(formatDate(queue.starts_at, tz(), true))} · ${formatTime(queue.starts_at, tz())}–${formatTime(queue.closes_at, tz())}</p><h2 class="dialog-title">${h(queue.subject_name)}</h2><p class="dialog-description">${h(queue.title)}</p>
     <div class="action-row dialog-badges">${statusLabel(queue)}<span class="badge badge-muted">Ожидают: ${ordinalPeople(queue.waiting_count)}</span></div>
     ${mine ? `<div class="notice">${queue.my_position === 0 ? 'Сейчас ваша защита. Удачи!' : `Ваше место: ${queue.my_position}. ${queue.my_position === 1 ? 'Вы следующие — можно готовиться.' : 'Ваше место сохранено.'}`}</div>` : ''}
     <div class="queue-members">${queue.entries.length ? queue.entries.map(entry => `<div class="member-row${entry.is_current ? ' member-current' : ''}${entry.student_id === state.user.id ? ' member-mine' : ''}">
