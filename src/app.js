@@ -1,6 +1,7 @@
 import config from '../config.js';
 import { createLiveApi, readableError } from './api.js';
 import { createDemoApi } from './demo.js';
+import { buildTimetable, lessonTimes, weekdayInZone } from './timetable.js';
 import { escapeHtml as h, fullName, initials, formatTime, formatDate, localDateTime, zonedToISO,
   activeQueues, myQueues, ordinalPeople, WEEKDAYS, WEEKDAYS_SHORT } from './format.js';
 
@@ -9,6 +10,7 @@ const icon = name => `<svg class="icon" aria-hidden="true"><use href="#icon-${na
 const live = createLiveApi(config, { onStatus: updateConnection });
 let api = live, state = null, view = 'mine', pending = false, cooldownUntil = 0, unsubscribe;
 let dialogState = null, confirmCallback = null, queueFilter = 'all', queueSearch = '';
+let scheduleTrack = 'all', scheduleDay = null;
 const dialog = $('#app-dialog');
 const headings = {
   mine: ['ВАША УЧЁБА БЕЗ СУЕТЫ', 'Мои очереди', 'Ваше место и всё, что нужно знать перед защитой.'],
@@ -92,6 +94,9 @@ function applyState(fresh) {
 }
 async function enter(nextApi, fresh) {
   unsubscribe?.(); api = nextApi; state = fresh; cooldownUntil = 0;
+  scheduleDay = weekdayInZone(Date.now(), tz());
+  try { scheduleTrack = localStorage.getItem(`poryadok.track.${state.user.id}`) || 'all'; } catch { scheduleTrack = 'all'; }
+  if (!['all', 'ml', 'cgf'].includes(scheduleTrack)) scheduleTrack = 'all';
   $('#auth-screen').hidden = true; $('#app-shell').hidden = false;
   $('#demo-banner').hidden = api.mode !== 'demo';
   const initial = location.hash.replace('#/', '');
@@ -174,10 +179,43 @@ function renderQueues() {
     <input id="queue-search" class="input queue-search" type="search" placeholder="Найти предмет…" aria-label="Найти предмет" value="${h(queueSearch)}"></div><div id="queue-results">${renderQueueResults()}</div>`;
 }
 function renderSchedule() {
-  const sorted = [...state.schedules].sort((a, b) => a.weekday - b.weekday || a.local_time.localeCompare(b.local_time));
-  return `<div class="notice">${icon('clock')} Время занятий указано в часовом поясе группы: ${h(tz())}. На каждое занятие создаётся отдельная очередь.</div>
-    <div class="section-head"><div><h2 class="section-title">Недельное расписание</h2><p class="section-description">Запись открывается автоматически до начала занятия.</p></div></div>
-    ${sorted.length ? `<div class="schedule-list">${scheduleCards(sorted)}</div>` : empty('Здесь появится расписание', isAdmin() ? 'Добавьте предмет, день недели и время открытия записи.' : 'Администратор ещё не добавил повторяющиеся занятия.', isAdmin() ? button('Добавить занятие', 'create-schedule', '', { primary: true }) : '')}`;
+  const today = weekdayInZone(Date.now(), tz());
+  const calendar = buildTimetable(state.schedules, scheduleTrack, today);
+  if (!calendar.days.some(day => day.number === scheduleDay)) scheduleDay = calendar.days[0].number;
+  const selected = calendar.days.find(day => day.number === scheduleDay);
+  const lessonButton = (lesson, agenda = false) => {
+    const description = `${WEEKDAYS[lesson.weekday - 1]}, ${lesson.label}, ${lesson.subject_name}${lesson.enabled === false ? ', на паузе' : ''}`;
+    const layout = agenda ? '' : `style="--top:${lesson.top}%;--height:${lesson.height}%;--lane:${lesson.lane};--lanes:${lesson.lanes}"`;
+    return `<button type="button" class="${agenda ? 'agenda-lesson' : 'calendar-lesson'} lesson-${lesson.category}${lesson.enabled === false ? ' lesson-paused' : ''}" data-action="open-lesson" data-id="${h(lesson.id)}" aria-label="${h(description)}" title="${h(description)}" ${layout}>
+      ${agenda ? `<span class="agenda-clock"><strong>${h(lesson.local_time)}</strong><span>${lesson.endTime}</span></span>` : `<span class="calendar-lesson-time">${h(lesson.label)}</span>`}
+      <span class="lesson-description"><strong>${h(lesson.subject_name)}</strong>${agenda ? `<span>${lesson.enabled === false ? 'На паузе' : `Запись за ${Number(lesson.opens_minutes_before)} мин.`}</span>` : ''}</span>
+      ${agenda ? `<span class="agenda-arrow" aria-hidden="true">↗</span>` : lesson.enabled === false ? '<span class="calendar-pause">Пауза</span>' : ''}</button>`;
+  };
+  return `<div class="timetable-controls"><div class="timetable-caption"><span class="timetable-label">ПОВТОРЯЕТСЯ КАЖДУЮ НЕДЕЛЮ</span><p>${icon('clock')} Время группы · UTC+5 <span class="timetable-count">Занятий: ${calendar.activeCount}</span></p></div>
+    <div class="schedule-track-controls"><span>Предмет по выбору</span><div class="segmented" role="group" aria-label="Вариант предмета">${[['all','Все'],['ml','ML'],['cgf','CGF']].map(([value,label]) => `<button type="button" data-schedule-track="${value}" aria-pressed="${scheduleTrack === value}" class="${scheduleTrack === value ? 'is-active' : ''}">${label}</button>`).join('')}</div></div></div>
+    <p class="timetable-hint">Выберите занятие, чтобы открыть его очередь.${scheduleTrack !== 'all' ? ' Общие предметы остаются видны.' : ' Выберите ML или CGF, чтобы скрыть другой вариант.'}</p>
+    ${state.schedules.length ? `<div class="timetable-desktop"><div class="week-calendar" style="--days:${calendar.days.length};--hours:${calendar.hours}">
+      <div class="calendar-time-heading">ВРЕМЯ</div>${calendar.days.map(day => `<div class="calendar-day-heading${day.today ? ' is-today' : ''}"><strong>${day.short}</strong><span>${day.today ? 'Сегодня' : day.name}</span></div>`).join('')}
+      <div class="calendar-axis" aria-hidden="true">${calendar.ticks.map((tick,index) => `<span style="top:${index / calendar.hours * 100}%">${tick}</span>`).join('')}</div>
+      ${calendar.days.map(day => `<section class="calendar-day${day.today ? ' is-today' : ''}" aria-label="${day.name}">${day.lessons.map(lesson => lessonButton(lesson)).join('')}${!day.lessons.length ? '<span class="calendar-no-lessons">Нет занятий</span>' : ''}</section>`).join('')}
+      </div></div>
+    <div class="timetable-mobile"><div class="schedule-day-tabs" role="tablist" aria-label="День недели" style="--days:${calendar.days.length}">${calendar.days.map(day => `<button type="button" id="schedule-day-${day.number}" role="tab" aria-selected="${day.number === scheduleDay}" tabindex="${day.number === scheduleDay ? '0' : '-1'}" aria-controls="schedule-day-panel" class="${day.number === scheduleDay ? 'is-selected' : ''}${day.today ? ' is-today' : ''}" data-schedule-day="${day.number}"><strong>${day.short}</strong><span>${day.lessons.length ? `${day.lessons.length} зан.` : '—'}</span></button>`).join('')}</div>
+    <section id="schedule-day-panel" class="schedule-day-panel" role="tabpanel" aria-labelledby="schedule-day-${scheduleDay}"><div class="agenda-heading"><h2>${selected.name}</h2>${selected.today ? '<span class="badge badge-green">Сегодня</span>' : ''}<span>${selected.lessons.length ? `Занятий: ${selected.lessons.length}` : 'Свободный день'}</span></div>
+    <div class="day-agenda">${selected.lessons.length ? selected.lessons.map(lesson => lessonButton(lesson,true)).join('') : '<div class="agenda-empty">В этот день занятий по выбранному варианту нет.</div>'}</div></section></div>
+    <div class="timetable-footer"><span>${icon('calendar')} На каждую дату создаётся отдельная очередь.</span><span>${icon('shield')} Ваше место сохраняется после закрытия сайта.</span></div>` : empty('Здесь появится расписание', isAdmin() ? 'Добавьте предмет, день недели и время открытия записи.' : 'Администратор ещё не добавил повторяющиеся занятия.', isAdmin() ? button('Добавить занятие', 'create-schedule', '', { primary: true }) : '')}`;
+}
+
+function openLesson(id) {
+  const lesson = state.schedules.find(item => item.id === id);
+  if (!lesson) return;
+  const timing = lessonTimes(lesson);
+  const queue = activeQueues(state).find(item => item.subject_id === lesson.subject_id && item.status !== 'closed' &&
+    Date.parse(item.closes_at) > Date.now() && weekdayInZone(item.starts_at,tz()) === Number(lesson.weekday) && formatTime(item.starts_at,tz()) === lesson.local_time);
+  showDialog(`<p class="eyebrow">${WEEKDAYS[lesson.weekday - 1]} · КАЖДУЮ НЕДЕЛЮ</p><h2 class="dialog-title">${h(lesson.subject_name)}</h2>
+    <p class="lesson-detail-time">${h(timing?.label || lesson.local_time)}</p>
+    <div class="notice">${lesson.enabled === false ? 'Автоматическое создание очередей на паузе.' : `Запись открывается за ${Number(lesson.opens_minutes_before)} минут до занятия.`}</div>
+    ${queue ? `<p class="dialog-description">Ближайшее занятие: ${h(formatDate(queue.starts_at,tz(),true))}.${queue.status === 'upcoming' ? ` Запись с ${formatTime(queue.opens_at,tz())}.` : ' Запись открыта.'}</p><div class="form-actions">${button('Открыть очередь','open-queue',queue.id,{primary:true})}</div>` : '<p class="dialog-description">Ближайшая очередь появится автоматически по расписанию.</p>'}
+    ${isAdmin() ? `<div class="dialog-admin-actions"><span class="small muted">Управление занятием</span><div class="action-row">${button('Изменить','edit-schedule',id)}${button('Удалить','delete-schedule',id,{danger:true})}</div></div>` : ''}`, 'lesson', id);
 }
 function renderAdmin() {
   return `<div class="card"><div class="card-header"><div><h2 class="section-title">Предметы группы</h2><p class="section-description">Название предмета объединяет его занятия и очереди.</p></div>${button('Добавить предмет', 'create-subject', '', { primary: true })}</div>
@@ -277,6 +315,14 @@ document.addEventListener('click', async event => {
   const navigation = event.target.closest('[data-view]');
   if (navigation && state) { setView(navigation.dataset.view, true); return; }
   if (event.target.closest('[data-close-dialog]')) { closeDialog(); return; }
+  const track = event.target.closest('[data-schedule-track]');
+  if (track && state) {
+    scheduleTrack = track.dataset.scheduleTrack;
+    try { localStorage.setItem(`poryadok.track.${state.user.id}`,scheduleTrack); } catch { /* Optional display preference. */ }
+    render(); return;
+  }
+  const day = event.target.closest('[data-schedule-day]');
+  if (day && state) { scheduleDay = Number(day.dataset.scheduleDay); render(); $(`#schedule-day-${scheduleDay}`)?.focus({preventScroll:true}); return; }
   const filter = event.target.closest('[data-filter]');
   if (filter) { queueFilter = filter.dataset.filter; render(); return; }
   const target = event.target.closest('[data-action]');
@@ -285,6 +331,7 @@ document.addEventListener('click', async event => {
   if (action === 'goto-queues') return setView('queues', true);
   if (action === 'goto-schedule') return setView('schedule', true);
   if (action === 'open-queue') return openQueue(id);
+  if (action === 'open-lesson') return openLesson(id);
   if (action === 'close-dialog') return closeDialog();
   if (action === 'confirm') return confirmCallback?.();
   if (action === 'refresh') {
@@ -314,6 +361,16 @@ document.addEventListener('click', async event => {
   }
   if (action === 'close-queue' && queue) return confirmAction('Закрыть очередь?', `Запись на «${queue.subject_name}» будет завершена. Список участников сохранится.`, 'Закрыть очередь', 'close_queue', { queue_id: id }, () => openQueue(id));
   if (action === 'archive-queue' && queue) return confirmAction('Убрать очередь в архив?', `Очередь «${queue.subject_name}» исчезнет из активного списка. Предмет и расписание сохранятся.`, 'В архив', 'archive_queue', { queue_id: id });
+});
+document.addEventListener('keydown', event => {
+  const day = event.target.closest('[data-schedule-day]');
+  if (!day || !state || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+  event.preventDefault();
+  const days = buildTimetable(state.schedules,scheduleTrack,weekdayInZone(Date.now(),tz())).days;
+  const current = days.findIndex(item => item.number === Number(day.dataset.scheduleDay));
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? days.length - 1 :
+    (current + (event.key === 'ArrowRight' ? 1 : -1) + days.length) % days.length;
+  scheduleDay = days[next].number; render(); $(`#schedule-day-${scheduleDay}`)?.focus({preventScroll:true});
 });
 document.addEventListener('input', event => {
   if (event.target.id !== 'queue-search') return;
